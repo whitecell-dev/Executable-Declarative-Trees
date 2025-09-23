@@ -1,0 +1,53 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Executable Declarative Tree (EDT)",
+  "type": "object",
+  "required": ["spc_version", "meta", "services", "state"],
+  "properties": {
+    "spc_version": {
+      "type": "string",
+      "description": "Version of the SPC/EDT spec used"
+    },
+    "meta": {
+      "type": "object",
+      "required": ["name", "exported_at"],
+      "properties": {
+        "name": { "type": "string" },
+        "exported_at": { "type": "string", "format": "date-time" },
+        "author": { "type": "string" },
+        "description": { "type": "string" }
+      }
+    },
+    "services": {
+      "type": "object",
+      "description": "Map of named services that compose the tree",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["id", "type", "title", "spec"],
+        "properties": {
+          "id": { "type": "string" },
+          "type": {
+            "type": "string",
+            "enum": ["connector", "processor", "monitor", "interface"]
+          },
+          "title": { "type": "string" },
+          "spec": {
+            "type": "object",
+            "description": "Service-specific declarative definition"
+          },
+          "status": { "type": "string", "enum": ["running", "stopped"] },
+          "lastRun": { "type": ["string", "null"], "format": "date-time" },
+          "outputs": { "type": "object" }
+        }
+      }
+    },
+    "state": {
+      "type": "object",
+      "description": "Global state store of the EDT application",
+      "additionalProperties": {
+        "type": ["object", "number", "string", "array", "boolean", "null"]
+      }
+    }
+  }
+}
+

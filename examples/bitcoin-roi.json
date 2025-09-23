@@ -1,0 +1,149 @@
+{
+  "spc_version": "1.0",
+  "meta": {
+    "name": "untitled",
+    "exported_at": "2025-09-23T02:11:13.797Z"
+  },
+  "services": {
+    "btc-price": {
+      "id": "btc-price",
+      "type": "connector",
+      "title": "Bitcoin Price Feed",
+      "spec": {
+        "url": "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_24hr_change=true",
+        "outputKey": "btc_data",
+        "rules": {
+          "rules": [
+            {
+              "name": "extract_price",
+              "if": "bitcoin",
+              "then": {
+                "price": "{{ bitcoin.usd }}",
+                "change": "{{ bitcoin.usd_24h_change }}"
+              }
+            }
+          ]
+        }
+      },
+      "status": "running",
+      "lastRun": "2025-09-20T01:26:53.546Z",
+      "outputs": {}
+    },
+    "roi-calc": {
+      "id": "roi-calc",
+      "type": "processor",
+      "title": "ROI Calculator",
+      "spec": {
+        "inputKey": "btc_data",
+        "outputKey": "roi_result",
+        "transform": [
+          {
+            "name": "roi",
+            "if": "price",
+            "then": {
+              "roi": "{{ (price - 30000) / 30000 * 100 }}"
+            }
+          }
+        ]
+      },
+      "status": "running",
+      "lastRun": "2025-09-20T01:27:12.192Z",
+      "outputs": {}
+    },
+    "price-monitor": {
+      "id": "price-monitor",
+      "type": "monitor",
+      "title": "Price Alert Monitor",
+      "spec": {
+        "checks": [
+          {
+            "name": "price",
+            "dataKey": "btc_data",
+            "expression": "data.price"
+          }
+        ],
+        "thresholds": {
+          "price": {
+            "above": 80000,
+            "below": 20000
+          }
+        }
+      },
+      "status": "running",
+      "lastRun": "2025-09-20T01:27:18.564Z",
+      "outputs": {}
+    },
+    "roi-ui": {
+      "id": "roi-ui",
+      "type": "interface",
+      "title": "ROI Sandbox",
+      "spec": {
+        "inputs": [
+          {
+            "name": "initial",
+            "label": "Initial Investment",
+            "type": "number",
+            "default": 30000
+          },
+          {
+            "name": "final",
+            "label": "Final Value",
+            "type": "number",
+            "default": 45000
+          }
+        ],
+        "calculation": "((inputs.final - inputs.initial) / inputs.initial) * 100",
+        "outputKey": "roi_interface_result"
+      },
+      "status": "stopped",
+      "lastRun": null,
+      "outputs": {}
+    }
+  },
+  "state": {
+    "btc_data": {
+      "bitcoin": {
+        "usd": 115743,
+        "usd_24h_change": -1.3837290684769141
+      },
+      "price": 115743,
+      "change": -1.3837290684769141
+    },
+    "btc_data_processed": {
+      "bitcoin": {
+        "usd": 117298,
+        "usd_24h_change": 0.44937281233661425
+      },
+      "price": 117298,
+      "change": 0.44937281233661425
+    },
+    "roi_interface_result": {
+      "inputs": {
+        "initial": 30000,
+        "final": 45000
+      },
+      "result": 50
+    },
+    "roi_result": {
+      "bitcoin": {
+        "usd": 115743,
+        "usd_24h_change": -1.3837290684769141
+      },
+      "price": 115743,
+      "change": -1.3837290684769141,
+      "roi": 285.81
+    },
+    "price-monitor_monitoring": {
+      "price": {
+        "value": 115743,
+        "status": "critical"
+      }
+    },
+    "interface_data": {
+      "inputs": {
+        "value": 0
+      },
+      "result": 0
+    }
+  }
+}

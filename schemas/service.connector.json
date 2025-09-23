@@ -1,0 +1,40 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Connector Service",
+  "type": "object",
+  "required": ["id", "type", "title", "spec"],
+  "properties": {
+    "id": { "type": "string" },
+    "type": { "const": "connector" },
+    "title": { "type": "string" },
+    "spec": {
+      "type": "object",
+      "required": ["url", "outputKey"],
+      "properties": {
+        "url": { "type": "string", "format": "uri" },
+        "outputKey": { "type": "string" },
+        "rules": {
+          "type": "object",
+          "properties": {
+            "rules": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["name", "then"],
+                "properties": {
+                  "name": { "type": "string" },
+                  "if": { "type": "string" },
+                  "then": { "type": "object" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "status": { "enum": ["running", "stopped"] },
+    "lastRun": { "type": ["string", "null"], "format": "date-time" },
+    "outputs": { "type": "object" }
+  }
+}
+

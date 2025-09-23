@@ -1,0 +1,43 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Monitor Service",
+  "type": "object",
+  "required": ["id", "type", "title", "spec"],
+  "properties": {
+    "id": { "type": "string" },
+    "type": { "const": "monitor" },
+    "title": { "type": "string" },
+    "spec": {
+      "type": "object",
+      "required": ["checks", "thresholds"],
+      "properties": {
+        "checks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "dataKey", "expression"],
+            "properties": {
+              "name": { "type": "string" },
+              "dataKey": { "type": "string" },
+              "expression": { "type": "string" }
+            }
+          }
+        },
+        "thresholds": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "above": { "type": "number" },
+              "below": { "type": "number" }
+            }
+          }
+        }
+      }
+    },
+    "status": { "enum": ["running", "stopped"] },
+    "lastRun": { "type": ["string", "null"], "format": "date-time" },
+    "outputs": { "type": "object" }
+  }
+}
+

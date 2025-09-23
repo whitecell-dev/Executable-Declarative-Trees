@@ -1,0 +1,35 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Processor Service",
+  "type": "object",
+  "required": ["id", "type", "title", "spec"],
+  "properties": {
+    "id": { "type": "string" },
+    "type": { "const": "processor" },
+    "title": { "type": "string" },
+    "spec": {
+      "type": "object",
+      "required": ["inputKey", "outputKey", "transform"],
+      "properties": {
+        "inputKey": { "type": "string" },
+        "outputKey": { "type": "string" },
+        "transform": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "then"],
+            "properties": {
+              "name": { "type": "string" },
+              "if": { "type": "string" },
+              "then": { "type": "object" }
+            }
+          }
+        }
+      }
+    },
+    "status": { "enum": ["running", "stopped"] },
+    "lastRun": { "type": ["string", "null"], "format": "date-time" },
+    "outputs": { "type": "object" }
+  }
+}
+
