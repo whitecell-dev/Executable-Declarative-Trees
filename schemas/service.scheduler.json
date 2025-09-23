@@ -1,0 +1,44 @@
+"scheduler": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Scheduler Service",
+    "description": "Cron/interval/backoff triggers with jitter",
+    "type": "object",
+    "required": ["id", "type", "title", "spec"],
+    "properties": {
+      "id": { "type": "string" },
+      "type": { "const": "scheduler" },
+      "title": { "type": "string" },
+      "spec": {
+        "type": "object",
+        "required": ["triggers"],
+        "properties": {
+          "triggers": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["name", "target"],
+              "properties": {
+                "name": { "type": "string" },
+                "target": { "type": "string" },
+                "cron": { "type": "string" },
+                "every_sec": { "type": "integer", "minimum": 1 },
+                "at": { "type": "string", "format": "time" },
+                "jitter_sec": { "type": "integer", "minimum": 0 },
+                "backoff": {
+                  "type": "object",
+                  "properties": {
+                    "initial_ms": { "type": "integer", "minimum": 0 },
+                    "max_ms": { "type": "integer", "minimum": 0 },
+                    "multiplier": { "type": "number", "minimum": 1 }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "status": { "enum": ["running", "stopped"] },
+      "lastRun": { "type": ["string", "null"], "format": "date-time" },
+      "outputs": { "type": "object" }
+    }
+  }

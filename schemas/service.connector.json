@@ -1,40 +1,79 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "Connector Service",
-  "type": "object",
-  "required": ["id", "type", "title", "spec"],
-  "properties": {
-    "id": { "type": "string" },
-    "type": { "const": "connector" },
-    "title": { "type": "string" },
-    "spec": {
-      "type": "object",
-      "required": ["url", "outputKey"],
-      "properties": {
-        "url": { "type": "string", "format": "uri" },
-        "outputKey": { "type": "string" },
-        "rules": {
-          "type": "object",
-          "properties": {
-            "rules": {
-              "type": "array",
-              "items": {
-                "type": "object",
-                "required": ["name", "then"],
-                "properties": {
-                  "name": { "type": "string" },
-                  "if": { "type": "string" },
-                  "then": { "type": "object" }
+  "connector": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Connector Service",
+    "description": "Fetch truth from external sources (HTTP, WS, file, sensor)",
+    "type": "object",
+    "required": ["id", "type", "title", "spec"],
+    "properties": {
+      "id": { "type": "string" },
+      "type": { "const": "connector" },
+      "title": { "type": "string" },
+      "spec": {
+        "type": "object",
+        "required": ["url", "outputKey"],
+        "properties": {
+          "url": { 
+            "type": "string", 
+            "format": "uri-template",
+            "description": "URL with optional template variables"
+          },
+          "method": { 
+            "type": "string", 
+            "enum": ["GET", "POST", "PUT", "DELETE"],
+            "default": "GET"
+          },
+          "outputKey": { 
+            "type": "string",
+            "description": "State key where fetched data is stored"
+          },
+          "rules": {
+            "type": "object",
+            "properties": {
+              "rules": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": ["name", "then"],
+                  "properties": {
+                    "name": { "type": "string" },
+                    "if": { "type": "string" },
+                    "then": { "type": "object" }
+                  }
                 }
               }
             }
+          },
+          "cache": {
+            "type": "object",
+            "properties": {
+              "ttl_sec": { "type": "integer", "minimum": 0 },
+              "etag": { "type": "boolean" },
+              "key": { "type": "string" }
+            }
+          },
+          "schedule": {
+            "type": "object",
+            "properties": {
+              "every_sec": { "type": "integer", "minimum": 1 },
+              "jitter_sec": { "type": "integer", "minimum": 0 },
+              "cron": { "type": "string" }
+            }
+          },
+          "headers": {
+            "type": "object",
+            "additionalProperties": { "type": "string" }
+          },
+          "body": {
+            "oneOf": [
+              { "type": "object" },
+              { "type": "string" }
+            ]
           }
         }
-      }
-    },
-    "status": { "enum": ["running", "stopped"] },
-    "lastRun": { "type": ["string", "null"], "format": "date-time" },
-    "outputs": { "type": "object" }
+      },
+      "status": { "enum": ["running", "stopped"] },
+      "lastRun": { "type": ["string", "null"], "format": "date-time" },
+      "outputs": { "type": "object" }
+    }
   }
-}
-

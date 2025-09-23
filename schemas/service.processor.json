@@ -1,35 +1,64 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "Processor Service",
-  "type": "object",
-  "required": ["id", "type", "title", "spec"],
-  "properties": {
-    "id": { "type": "string" },
-    "type": { "const": "processor" },
-    "title": { "type": "string" },
-    "spec": {
-      "type": "object",
-      "required": ["inputKey", "outputKey", "transform"],
-      "properties": {
-        "inputKey": { "type": "string" },
-        "outputKey": { "type": "string" },
-        "transform": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "required": ["name", "then"],
-            "properties": {
-              "name": { "type": "string" },
-              "if": { "type": "string" },
-              "then": { "type": "object" }
-            }
-          }
-        }
-      }
-    },
-    "status": { "enum": ["running", "stopped"] },
-    "lastRun": { "type": ["string", "null"], "format": "date-time" },
-    "outputs": { "type": "object" }
+"processor": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Processor Service",
+    "description": "Pure transforms and relational algebra operations (σ, π, ⨝, map/reduce)",
+    "type": "object",
+    "required": ["id", "type", "title", "spec"],
+    "properties": {
+      "id": { "type": "string" },
+      "type": { "const": "processor" },
+      "title": { "type": "string" },
+      "spec": {
+	"type": "object",
+	"properties": {
+	  "inputKey": { "type": "string" },
+	  "outputKey": { "type": "string" },
+	  "transform": {
+	    "type": "array",
+	    "items": {
+	      "type": "object",
+	      "properties": {
+		"name": { "type": "string" },
+		"if": { "type": "string" },
+		"then": { "type": "object" }
+	      }
+	    }
+	  },
+	  "pipes": {
+	    "type": "array",
+	    "items": {
+	      "type": "object",
+	      "properties": {
+		"select": { "type": "string", "description": "σ - selection predicate" },
+		"project": { 
+		  "type": "array", 
+		  "items": { "type": "string" },
+		  "description": "π - projection columns"
+		},
+		"join": {
+		  "type": "object",
+		  "properties": {
+		    "with": { "type": "string" },
+		    "on": { "type": "string" }
+		  },
+		  "description": "⨝ - join operation"
+		},
+		"derive": { "type": "object", "description": "Computed columns" },
+		"aggregate": {
+		  "type": "object",
+		  "properties": {
+		    "groupBy": { "type": "array", "items": { "type": "string" } },
+		    "compute": { "type": "object" }
+		  }
+		}
+	      }
+	    }
+	  }
+	}
+      },
+      "status": { "enum": ["running", "stopped"] },
+      "lastRun": { "type": ["string", "null"], "format": "date-time" },
+      "outputs": { "type": "object" }
+    }
   }
-}
-

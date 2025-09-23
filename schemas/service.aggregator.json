@@ -1,0 +1,50 @@
+"aggregator": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Aggregator Service",
+    "description": "Fan-in/fan-out combiners with windowing (tumbling, sliding, session)",
+    "type": "object",
+    "required": ["id", "type", "title", "spec"],
+    "properties": {
+      "id": { "type": "string" },
+      "type": { "const": "aggregator" },
+      "title": { "type": "string" },
+      "spec": {
+        "type": "object",
+        "required": ["inputKey", "window"],
+        "properties": {
+          "inputKey": { "type": "string" },
+          "outputKey": { "type": "string" },
+          "window": {
+            "type": "object",
+            "required": ["type", "size_sec"],
+            "properties": {
+              "type": { 
+                "type": "string", 
+                "enum": ["tumbling", "sliding", "session"] 
+              },
+              "size_sec": { "type": "integer", "minimum": 1 },
+              "slide_sec": { "type": "integer", "minimum": 1 },
+              "gap_sec": { "type": "integer", "minimum": 1 }
+            }
+          },
+          "reduce": {
+            "type": "object",
+            "properties": {
+              "emit": {
+                "type": "string",
+                "enum": ["latest", "earliest", "all", "count", "sum", "avg", "min", "max"]
+              },
+              "custom": { "type": "string" }
+            }
+          },
+          "groupBy": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        }
+      },
+      "status": { "enum": ["running", "stopped"] },
+      "lastRun": { "type": ["string", "null"], "format": "date-time" },
+      "outputs": { "type": "object" }
+    }
+  }

@@ -1,0 +1,61 @@
+ "quota": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Quota Service",
+    "description": "Per-tenant rate/volume governors (global + per-service)",
+    "type": "object",
+    "required": ["id", "type", "title", "spec"],
+    "properties": {
+      "id": { "type": "string" },
+      "type": { "const": "quota" },
+      "title": { "type": "string" },
+      "spec": {
+        "type": "object",
+        "properties": {
+          "max_qps": { 
+            "type": "integer", 
+            "minimum": 0,
+            "description": "Maximum queries per second"
+          },
+          "burst": { 
+            "type": "integer", 
+            "minimum": 0,
+            "description": "Burst capacity"
+          },
+          "per_tenant": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "max_qps": { "type": "integer", "minimum": 0 },
+                "burst": { "type": "integer", "minimum": 0 },
+                "max_volume_mb": { "type": "number", "minimum": 0 },
+                "max_connections": { "type": "integer", "minimum": 0 }
+              }
+            }
+          },
+          "per_service": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "max_qps": { "type": "integer", "minimum": 0 },
+                "burst": { "type": "integer", "minimum": 0 }
+              }
+            }
+          },
+          "algorithm": {
+            "type": "string",
+            "enum": ["token_bucket", "leaky_bucket", "fixed_window", "sliding_window"]
+          },
+          "enforcement": {
+            "type": "string",
+            "enum": ["drop", "queue", "throttle", "reject"]
+          }
+        }
+      },
+      "status": { "enum": ["running", "stopped"] },
+      "lastRun": { "type": ["string", "null"], "format": "date-time" },
+      "outputs": { "type": "object" }
+    }
+  }
+}

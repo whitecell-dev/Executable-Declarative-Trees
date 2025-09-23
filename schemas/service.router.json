@@ -1,0 +1,47 @@
+"router": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Router Service",
+    "description": "Content-based and rule-based routing to subtrees/shards",
+    "type": "object",
+    "required": ["id", "type", "title", "spec"],
+    "properties": {
+      "id": { "type": "string" },
+      "type": { "const": "router" },
+      "title": { "type": "string" },
+      "spec": {
+        "type": "object",
+        "required": ["route"],
+        "properties": {
+          "shard_key": { 
+            "type": "string",
+            "description": "Template expression for sharding key"
+          },
+          "shards": { 
+            "type": "integer", 
+            "minimum": 1,
+            "description": "Number of shards for distribution"
+          },
+          "route": { 
+            "type": "string",
+            "description": "Target service or pipeline"
+          },
+          "routes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["condition", "target"],
+              "properties": {
+                "condition": { "type": "string" },
+                "target": { "type": "string" },
+                "weight": { "type": "number", "minimum": 0, "maximum": 1 }
+              }
+            }
+          },
+          "fallback": { "type": "string" }
+        }
+      },
+      "status": { "enum": ["running", "stopped"] },
+      "lastRun": { "type": ["string", "null"], "format": "date-time" },
+      "outputs": { "type": "object" }
+    }
+  }

@@ -1,0 +1,53 @@
+"adapter": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Adapter Service",
+    "description": "Idempotent side-effects (notify, write, webhook)",
+    "type": "object",
+    "required": ["id", "type", "title", "spec"],
+    "properties": {
+      "id": { "type": "string" },
+      "type": { "const": "adapter" },
+      "title": { "type": "string" },
+      "spec": {
+        "type": "object",
+        "required": ["kind"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["webhook", "email", "sms", "database", "file", "pubsub"]
+          },
+          "url": { "type": "string", "format": "uri-template" },
+          "method": { "type": "string", "enum": ["GET", "POST", "PUT", "DELETE"] },
+          "headers": { "type": "object" },
+          "body": {
+            "oneOf": [
+              { "type": "object" },
+              { "type": "string" }
+            ]
+          },
+          "idempotency_key": { 
+            "type": "string",
+            "description": "Template for generating idempotency keys"
+          },
+          "retry": {
+            "type": "object",
+            "properties": {
+              "max_attempts": { "type": "integer", "minimum": 1 },
+              "backoff_ms": { "type": "integer", "minimum": 0 },
+              "exponential": { "type": "boolean", "default": true }
+            }
+          },
+          "circuit_breaker": {
+            "type": "object",
+            "properties": {
+              "failure_threshold": { "type": "integer", "minimum": 1 },
+              "reset_timeout_sec": { "type": "integer", "minimum": 1 }
+            }
+          }
+        }
+      },
+      "status": { "enum": ["running", "stopped"] },
+      "lastRun": { "type": ["string", "null"], "format": "date-time" },
+      "outputs": { "type": "object" }
+    }
+  }

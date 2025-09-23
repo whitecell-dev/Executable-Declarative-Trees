@@ -1,0 +1,51 @@
+ "ledger": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Ledger Service",
+    "description": "Append-only provenance log (MNEME facts & hashes)",
+    "type": "object",
+    "required": ["id", "type", "title", "spec"],
+    "properties": {
+      "id": { "type": "string" },
+      "type": { "const": "ledger" },
+      "title": { "type": "string" },
+      "spec": {
+        "type": "object",
+        "required": ["store"],
+        "properties": {
+          "store": { 
+            "type": "string",
+            "pattern": "^mneme://",
+            "description": "MNEME ledger URI"
+          },
+          "facts": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["timestamp", "rule_hash", "input_hash", "output_hash"],
+              "properties": {
+                "timestamp": { "type": "string", "format": "date-time" },
+                "rule_hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+                "input_hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+                "output_hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+                "input_set": { "type": "array" },
+                "output_set": { "type": "array" },
+                "signature": { "type": "string" }
+              }
+            }
+          },
+          "retention_days": { "type": "integer", "minimum": 1 },
+          "compression": { "type": "boolean", "default": true },
+          "replication": {
+            "type": "object",
+            "properties": {
+              "peers": { "type": "array", "items": { "type": "string" } },
+              "consensus": { "type": "string", "enum": ["raft", "pbft", "eventual"] }
+            }
+          }
+        }
+      },
+      "status": { "enum": ["running", "stopped"] },
+      "lastRun": { "type": ["string", "null"], "format": "date-time" },
+      "outputs": { "type": "object" }
+    }
+  }

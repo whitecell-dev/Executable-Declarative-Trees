@@ -1,0 +1,44 @@
+"vault": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Vault Service",
+    "description": "Secret/material management (no secrets in trees)",
+    "type": "object",
+    "required": ["id", "type", "title", "spec"],
+    "properties": {
+      "id": { "type": "string" },
+      "type": { "const": "vault" },
+      "title": { "type": "string" },
+      "spec": {
+        "type": "object",
+        "required": ["provider"],
+        "properties": {
+          "provider": {
+            "type": "string",
+            "enum": ["env", "file", "aws_secrets", "hashicorp_vault", "azure_keyvault"]
+          },
+          "secrets": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "ref": { "type": "string", "description": "Reference to external secret" },
+                "env": { "type": "string", "description": "Environment variable name" },
+                "path": { "type": "string", "description": "File path or vault path" },
+                "version": { "type": "string" }
+              }
+            }
+          },
+          "rotation_policy": {
+            "type": "object",
+            "properties": {
+              "auto_rotate": { "type": "boolean" },
+              "rotation_days": { "type": "integer", "minimum": 1 }
+            }
+          }
+        }
+      },
+      "status": { "enum": ["running", "stopped"] },
+      "lastRun": { "type": ["string", "null"], "format": "date-time" },
+      "outputs": { "type": "object" }
+    }
+  }

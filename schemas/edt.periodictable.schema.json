@@ -1,0 +1,655 @@
+{
+  "connector": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Connector Service",
+    "description": "Fetch truth from external sources (HTTP, WS, file, sensor)",
+    "type": "object",
+    "required": ["id", "type", "title", "spec"],
+    "properties": {
+      "id": { "type": "string" },
+      "type": { "const": "connector" },
+      "title": { "type": "string" },
+      "spec": {
+        "type": "object",
+        "required": ["url", "outputKey"],
+        "properties": {
+          "url": { 
+            "type": "string", 
+            "format": "uri-template",
+            "description": "URL with optional template variables"
+          },
+          "method": { 
+            "type": "string", 
+            "enum": ["GET", "POST", "PUT", "DELETE"],
+            "default": "GET"
+          },
+          "outputKey": { 
+            "type": "string",
+            "description": "State key where fetched data is stored"
+          },
+          "rules": {
+            "type": "object",
+            "properties": {
+              "rules": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": ["name", "then"],
+                  "properties": {
+                    "name": { "type": "string" },
+                    "if": { "type": "string" },
+                    "then": { "type": "object" }
+                  }
+                }
+              }
+            }
+          },
+          "cache": {
+            "type": "object",
+            "properties": {
+              "ttl_sec": { "type": "integer", "minimum": 0 },
+              "etag": { "type": "boolean" },
+              "key": { "type": "string" }
+            }
+          },
+          "schedule": {
+            "type": "object",
+            "properties": {
+              "every_sec": { "type": "integer", "minimum": 1 },
+              "jitter_sec": { "type": "integer", "minimum": 0 },
+              "cron": { "type": "string" }
+            }
+          },
+          "headers": {
+            "type": "object",
+            "additionalProperties": { "type": "string" }
+          },
+          "body": {
+            "oneOf": [
+              { "type": "object" },
+              { "type": "string" }
+            ]
+          }
+        }
+      },
+      "status": { "enum": ["running", "stopped"] },
+      "lastRun": { "type": ["string", "null"], "format": "date-time" },
+      "outputs": { "type": "object" }
+    }
+  },
+
+  "processor": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Processor Service",
+    "description": "Pure transforms and relational algebra operations (σ, π, ⨝, map/reduce)",
+    "type": "object",
+    "required": ["id", "type", "title", "spec"],
+    "properties": {
+      "id": { "type": "string" },
+      "type": { "const": "processor" },
+      "title": { "type": "string" },
+      "spec": {
+        "type": "object",
+        "properties": {
+          "inputKey": { "type": "string" },
+          "outputKey": { "type": "string" },
+          "transform": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": { "type": "string" },
+                "if": { "type": "string" },
+                "then": { "type": "object" }
+              }
+            }
+          },
+          "pipes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "select": { "type": "string", "description": "σ - selection predicate" },
+                "project": { 
+                  "type": "array", 
+                  "items": { "type": "string" },
+                  "description": "π - projection columns"
+                },
+                "join": {
+                  "type": "object",
+                  "properties": {
+                    "with": { "type": "string" },
+                    "on": { "type": "string" }
+                  },
+                  "description": "⨝ - join operation"
+                },
+                "derive": { "type": "object", "description": "Computed columns" },
+                "aggregate": {
+                  "type": "object",
+                  "properties": {
+                    "groupBy": { "type": "array", "items": { "type": "string" } },
+                    "compute": { "type": "object" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "status": { "enum": ["running", "stopped"] },
+      "lastRun": { "type": ["string", "null"], "format": "date-time" },
+      "outputs": { "type": "object" }
+    }
+  },
+
+  "monitor": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Monitor Service",
+    "description": "Boolean/watch conditions that trigger events",
+    "type": "object",
+    "required": ["id", "type", "title", "spec"],
+    "properties": {
+      "id": { "type": "string" },
+      "type": { "const": "monitor" },
+      "title": { "type": "string" },
+      "spec": {
+        "type": "object",
+        "required": ["checks"],
+        "properties": {
+          "checks": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["name", "dataKey", "expression"],
+              "properties": {
+                "name": { "type": "string" },
+                "dataKey": { "type": "string" },
+                "expression": { "type": "string" }
+              }
+            }
+          },
+          "thresholds": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "above": { "type": "number" },
+                "below": { "type": "number" },
+                "equals": {},
+                "matches": { "type": "string" }
+              }
+            }
+          },
+          "emit": {
+            "type": "string",
+            "enum": ["onChange", "onTrue", "onFalse", "always"],
+            "default": "onChange"
+          }
+        }
+      },
+      "status": { "enum": ["running", "stopped"] },
+      "lastRun": { "type": ["string", "null"], "format": "date-time" },
+      "outputs": { "type": "object" }
+    }
+  },
+
+  "adapter": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Adapter Service",
+    "description": "Idempotent side-effects (notify, write, webhook)",
+    "type": "object",
+    "required": ["id", "type", "title", "spec"],
+    "properties": {
+      "id": { "type": "string" },
+      "type": { "const": "adapter" },
+      "title": { "type": "string" },
+      "spec": {
+        "type": "object",
+        "required": ["kind"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["webhook", "email", "sms", "database", "file", "pubsub"]
+          },
+          "url": { "type": "string", "format": "uri-template" },
+          "method": { "type": "string", "enum": ["GET", "POST", "PUT", "DELETE"] },
+          "headers": { "type": "object" },
+          "body": {
+            "oneOf": [
+              { "type": "object" },
+              { "type": "string" }
+            ]
+          },
+          "idempotency_key": { 
+            "type": "string",
+            "description": "Template for generating idempotency keys"
+          },
+          "retry": {
+            "type": "object",
+            "properties": {
+              "max_attempts": { "type": "integer", "minimum": 1 },
+              "backoff_ms": { "type": "integer", "minimum": 0 },
+              "exponential": { "type": "boolean", "default": true }
+            }
+          },
+          "circuit_breaker": {
+            "type": "object",
+            "properties": {
+              "failure_threshold": { "type": "integer", "minimum": 1 },
+              "reset_timeout_sec": { "type": "integer", "minimum": 1 }
+            }
+          }
+        }
+      },
+      "status": { "enum": ["running", "stopped"] },
+      "lastRun": { "type": ["string", "null"], "format": "date-time" },
+      "outputs": { "type": "object" }
+    }
+  },
+
+  "aggregator": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Aggregator Service",
+    "description": "Fan-in/fan-out combiners with windowing (tumbling, sliding, session)",
+    "type": "object",
+    "required": ["id", "type", "title", "spec"],
+    "properties": {
+      "id": { "type": "string" },
+      "type": { "const": "aggregator" },
+      "title": { "type": "string" },
+      "spec": {
+        "type": "object",
+        "required": ["inputKey", "window"],
+        "properties": {
+          "inputKey": { "type": "string" },
+          "outputKey": { "type": "string" },
+          "window": {
+            "type": "object",
+            "required": ["type", "size_sec"],
+            "properties": {
+              "type": { 
+                "type": "string", 
+                "enum": ["tumbling", "sliding", "session"] 
+              },
+              "size_sec": { "type": "integer", "minimum": 1 },
+              "slide_sec": { "type": "integer", "minimum": 1 },
+              "gap_sec": { "type": "integer", "minimum": 1 }
+            }
+          },
+          "reduce": {
+            "type": "object",
+            "properties": {
+              "emit": {
+                "type": "string",
+                "enum": ["latest", "earliest", "all", "count", "sum", "avg", "min", "max"]
+              },
+              "custom": { "type": "string" }
+            }
+          },
+          "groupBy": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        }
+      },
+      "status": { "enum": ["running", "stopped"] },
+      "lastRun": { "type": ["string", "null"], "format": "date-time" },
+      "outputs": { "type": "object" }
+    }
+  },
+
+  "router": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Router Service",
+    "description": "Content-based and rule-based routing to subtrees/shards",
+    "type": "object",
+    "required": ["id", "type", "title", "spec"],
+    "properties": {
+      "id": { "type": "string" },
+      "type": { "const": "router" },
+      "title": { "type": "string" },
+      "spec": {
+        "type": "object",
+        "required": ["route"],
+        "properties": {
+          "shard_key": { 
+            "type": "string",
+            "description": "Template expression for sharding key"
+          },
+          "shards": { 
+            "type": "integer", 
+            "minimum": 1,
+            "description": "Number of shards for distribution"
+          },
+          "route": { 
+            "type": "string",
+            "description": "Target service or pipeline"
+          },
+          "routes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["condition", "target"],
+              "properties": {
+                "condition": { "type": "string" },
+                "target": { "type": "string" },
+                "weight": { "type": "number", "minimum": 0, "maximum": 1 }
+              }
+            }
+          },
+          "fallback": { "type": "string" }
+        }
+      },
+      "status": { "enum": ["running", "stopped"] },
+      "lastRun": { "type": ["string", "null"], "format": "date-time" },
+      "outputs": { "type": "object" }
+    }
+  },
+
+  "scheduler": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Scheduler Service",
+    "description": "Cron/interval/backoff triggers with jitter",
+    "type": "object",
+    "required": ["id", "type", "title", "spec"],
+    "properties": {
+      "id": { "type": "string" },
+      "type": { "const": "scheduler" },
+      "title": { "type": "string" },
+      "spec": {
+        "type": "object",
+        "required": ["triggers"],
+        "properties": {
+          "triggers": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["name", "target"],
+              "properties": {
+                "name": { "type": "string" },
+                "target": { "type": "string" },
+                "cron": { "type": "string" },
+                "every_sec": { "type": "integer", "minimum": 1 },
+                "at": { "type": "string", "format": "time" },
+                "jitter_sec": { "type": "integer", "minimum": 0 },
+                "backoff": {
+                  "type": "object",
+                  "properties": {
+                    "initial_ms": { "type": "integer", "minimum": 0 },
+                    "max_ms": { "type": "integer", "minimum": 0 },
+                    "multiplier": { "type": "number", "minimum": 1 }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "status": { "enum": ["running", "stopped"] },
+      "lastRun": { "type": ["string", "null"], "format": "date-time" },
+      "outputs": { "type": "object" }
+    }
+  },
+
+  "cache": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Cache Service",
+    "description": "Keyed memoization with TTL and ETag/If-None-Match awareness",
+    "type": "object",
+    "required": ["id", "type", "title", "spec"],
+    "properties": {
+      "id": { "type": "string" },
+      "type": { "const": "cache" },
+      "title": { "type": "string" },
+      "spec": {
+        "type": "object",
+        "required": ["strategy"],
+        "properties": {
+          "strategy": {
+            "type": "string",
+            "enum": ["LRU", "LFU", "FIFO", "TTL"]
+          },
+          "max_entries": { "type": "integer", "minimum": 1 },
+          "max_size_mb": { "type": "number", "minimum": 0 },
+          "ttl_sec": { "type": "integer", "minimum": 0 },
+          "key_template": { "type": "string" },
+          "etag_aware": { "type": "boolean", "default": false },
+          "stale_while_revalidate_sec": { "type": "integer", "minimum": 0 },
+          "invalidation_rules": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "pattern": { "type": "string" },
+                "on_event": { "type": "string" }
+              }
+            }
+          }
+        }
+      },
+      "status": { "enum": ["running", "stopped"] },
+      "lastRun": { "type": ["string", "null"], "format": "date-time" },
+      "outputs": { "type": "object" }
+    }
+  },
+
+  "vault": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Vault Service",
+    "description": "Secret/material management (no secrets in trees)",
+    "type": "object",
+    "required": ["id", "type", "title", "spec"],
+    "properties": {
+      "id": { "type": "string" },
+      "type": { "const": "vault" },
+      "title": { "type": "string" },
+      "spec": {
+        "type": "object",
+        "required": ["provider"],
+        "properties": {
+          "provider": {
+            "type": "string",
+            "enum": ["env", "file", "aws_secrets", "hashicorp_vault", "azure_keyvault"]
+          },
+          "secrets": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "ref": { "type": "string", "description": "Reference to external secret" },
+                "env": { "type": "string", "description": "Environment variable name" },
+                "path": { "type": "string", "description": "File path or vault path" },
+                "version": { "type": "string" }
+              }
+            }
+          },
+          "rotation_policy": {
+            "type": "object",
+            "properties": {
+              "auto_rotate": { "type": "boolean" },
+              "rotation_days": { "type": "integer", "minimum": 1 }
+            }
+          }
+        }
+      },
+      "status": { "enum": ["running", "stopped"] },
+      "lastRun": { "type": ["string", "null"], "format": "date-time" },
+      "outputs": { "type": "object" }
+    }
+  },
+
+  "ledger": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Ledger Service",
+    "description": "Append-only provenance log (MNEME facts & hashes)",
+    "type": "object",
+    "required": ["id", "type", "title", "spec"],
+    "properties": {
+      "id": { "type": "string" },
+      "type": { "const": "ledger" },
+      "title": { "type": "string" },
+      "spec": {
+        "type": "object",
+        "required": ["store"],
+        "properties": {
+          "store": { 
+            "type": "string",
+            "pattern": "^mneme://",
+            "description": "MNEME ledger URI"
+          },
+          "facts": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["timestamp", "rule_hash", "input_hash", "output_hash"],
+              "properties": {
+                "timestamp": { "type": "string", "format": "date-time" },
+                "rule_hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+                "input_hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+                "output_hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+                "input_set": { "type": "array" },
+                "output_set": { "type": "array" },
+                "signature": { "type": "string" }
+              }
+            }
+          },
+          "retention_days": { "type": "integer", "minimum": 1 },
+          "compression": { "type": "boolean", "default": true },
+          "replication": {
+            "type": "object",
+            "properties": {
+              "peers": { "type": "array", "items": { "type": "string" } },
+              "consensus": { "type": "string", "enum": ["raft", "pbft", "eventual"] }
+            }
+          }
+        }
+      },
+      "status": { "enum": ["running", "stopped"] },
+      "lastRun": { "type": ["string", "null"], "format": "date-time" },
+      "outputs": { "type": "object" }
+    }
+  },
+
+  "registry": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Registry Service",
+    "description": "Schema and version constraints with compatibility gates",
+    "type": "object",
+    "required": ["id", "type", "title", "spec"],
+    "properties": {
+      "id": { "type": "string" },
+      "type": { "const": "registry" },
+      "title": { "type": "string" },
+      "spec": {
+        "type": "object",
+        "required": ["contracts"],
+        "properties": {
+          "contracts": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["service", "version"],
+              "properties": {
+                "service": { "type": "string" },
+                "version": { 
+                  "type": "string",
+                  "pattern": "^\\d+\\.\\d+\\.\\d+$"
+                },
+                "requires": {
+                  "type": "object",
+                  "properties": {
+                    "schema": { "type": "object" },
+                    "fields": { "type": "array", "items": { "type": "string" } }
+                  }
+                },
+                "produces": {
+                  "type": "object",
+                  "properties": {
+                    "schema": { "type": "object" },
+                    "fields": { "type": "array", "items": { "type": "string" } }
+                  }
+                },
+                "max_qps": { "type": "integer", "minimum": 0 },
+                "auth": {
+                  "type": "object",
+                  "properties": {
+                    "scope": { "type": "string" },
+                    "required": { "type": "boolean" }
+                  }
+                }
+              }
+            }
+          },
+          "compatibility_mode": {
+            "type": "string",
+            "enum": ["backward", "forward", "full", "none"]
+          }
+        }
+      },
+      "status": { "enum": ["running", "stopped"] },
+      "lastRun": { "type": ["string", "null"], "format": "date-time" },
+      "outputs": { "type": "object" }
+    }
+  },
+
+  "quota": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Quota Service",
+    "description": "Per-tenant rate/volume governors (global + per-service)",
+    "type": "object",
+    "required": ["id", "type", "title", "spec"],
+    "properties": {
+      "id": { "type": "string" },
+      "type": { "const": "quota" },
+      "title": { "type": "string" },
+      "spec": {
+        "type": "object",
+        "properties": {
+          "max_qps": { 
+            "type": "integer", 
+            "minimum": 0,
+            "description": "Maximum queries per second"
+          },
+          "burst": { 
+            "type": "integer", 
+            "minimum": 0,
+            "description": "Burst capacity"
+          },
+          "per_tenant": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "max_qps": { "type": "integer", "minimum": 0 },
+                "burst": { "type": "integer", "minimum": 0 },
+                "max_volume_mb": { "type": "number", "minimum": 0 },
+                "max_connections": { "type": "integer", "minimum": 0 }
+              }
+            }
+          },
+          "per_service": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "max_qps": { "type": "integer", "minimum": 0 },
+                "burst": { "type": "integer", "minimum": 0 }
+              }
+            }
+          },
+          "algorithm": {
+            "type": "string",
+            "enum": ["token_bucket", "leaky_bucket", "fixed_window", "sliding_window"]
+          },
+          "enforcement": {
+            "type": "string",
+            "enum": ["drop", "queue", "throttle", "reject"]
+          }
+        }
+      },
+      "status": { "enum": ["running", "stopped"] },
+      "lastRun": { "type": ["string", "null"], "format": "date-time" },
+      "outputs": { "type": "object" }
+    }
+  }
+}

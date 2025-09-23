@@ -1,0 +1,41 @@
+"cache": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Cache Service",
+    "description": "Keyed memoization with TTL and ETag/If-None-Match awareness",
+    "type": "object",
+    "required": ["id", "type", "title", "spec"],
+    "properties": {
+      "id": { "type": "string" },
+      "type": { "const": "cache" },
+      "title": { "type": "string" },
+      "spec": {
+        "type": "object",
+        "required": ["strategy"],
+        "properties": {
+          "strategy": {
+            "type": "string",
+            "enum": ["LRU", "LFU", "FIFO", "TTL"]
+          },
+          "max_entries": { "type": "integer", "minimum": 1 },
+          "max_size_mb": { "type": "number", "minimum": 0 },
+          "ttl_sec": { "type": "integer", "minimum": 0 },
+          "key_template": { "type": "string" },
+          "etag_aware": { "type": "boolean", "default": false },
+          "stale_while_revalidate_sec": { "type": "integer", "minimum": 0 },
+          "invalidation_rules": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "pattern": { "type": "string" },
+                "on_event": { "type": "string" }
+              }
+            }
+          }
+        }
+      },
+      "status": { "enum": ["running", "stopped"] },
+      "lastRun": { "type": ["string", "null"], "format": "date-time" },
+      "outputs": { "type": "object" }
+    }
+  }
