@@ -1,7 +1,3 @@
-Got it — here’s a **dedicated README for the primitive itself**, written as the “source-of-truth” manifesto that explains the **what** and **why** before people ever touch Deck.Shell, MicroService OS, or SPC demos.
-
----
-
 # 🌲 Executable Declarative Trees (EDTs)
 
 **The missing primitive between data and computation.**
