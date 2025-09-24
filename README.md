@@ -3,7 +3,7 @@
 **The missing primitive between data and computation.**
 
 > *Objects gave us encapsulation. Git gave us history. IPFS gave us content addressing.*
-> **Executable Declarative Trees give us portable, verifiable application logic.**
+> **Executable Declarative Trees give us portable, verifiable application logic and that's what makes AI-native programming possible.**
 
 ---
 
