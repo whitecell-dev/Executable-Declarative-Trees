@@ -1,0 +1,128 @@
+{
+  "connector": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Connector Service",
+    "description": "Fetch truth from external sources (HTTP, WS, file, sensor)",
+    "type": "object",
+    "required": ["id", "type", "title", "spec"],
+    "properties": {
+      "id": { "type": "string" },
+      "type": { "const": "connector" },
+      "title": { "type": "string" },
+      "spec": {
+        "type": "object",
+        "required": ["url", "outputKey"],
+        "properties": {
+          "url": { "type": "string", "format": "uri-template" },
+          "method": { "type": "string", "enum": ["GET", "POST", "PUT", "DELETE"], "default": "GET" },
+          "outputKey": { "type": "string" },
+          "headers": { "type": "object", "additionalProperties": { "type": "string" } },
+          "body": { "oneOf": [ { "type": "object" }, { "type": "string" } ] }
+        }
+      },
+      "status": { "enum": ["running", "stopped"] },
+      "outputs": { "type": "object" }
+    }
+  },
+
+  "processor": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Processor Service",
+    "description": "Pure transforms and relational algebra operations (σ, π, ⨝, map/reduce)",
+    "type": "object",
+    "required": ["id", "type", "title", "spec"],
+    "properties": {
+      "id": { "type": "string" },
+      "type": { "const": "processor" },
+      "title": { "type": "string" },
+      "spec": {
+        "type": "object",
+        "properties": {
+          "inputKey": { "type": "string" },
+          "outputKey": { "type": "string" },
+          "pipes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "select": { "type": "string" },
+                "project": { "type": "array", "items": { "type": "string" } },
+                "derive": { "type": "object" },
+                "aggregate": {
+                  "type": "object",
+                  "properties": {
+                    "groupBy": { "type": "array", "items": { "type": "string" } },
+                    "compute": { "type": "object" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "status": { "enum": ["running", "stopped"] },
+      "outputs": { "type": "object" }
+    }
+  },
+
+  "monitor": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Monitor Service",
+    "description": "Boolean/watch conditions that trigger events",
+    "type": "object",
+    "required": ["id", "type", "title", "spec"],
+    "properties": {
+      "id": { "type": "string" },
+      "type": { "const": "monitor" },
+      "title": { "type": "string" },
+      "spec": {
+        "type": "object",
+        "required": ["checks"],
+        "properties": {
+          "checks": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["name", "dataKey", "expression"],
+              "properties": {
+                "name": { "type": "string" },
+                "dataKey": { "type": "string" },
+                "expression": { "type": "string" }
+              }
+            }
+          },
+          "emit": { "type": "string", "enum": ["onChange", "onTrue", "onFalse", "always"], "default": "onChange" }
+        }
+      },
+      "status": { "enum": ["running", "stopped"] },
+      "outputs": { "type": "object" }
+    }
+  },
+
+  "adapter": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Adapter Service",
+    "description": "Idempotent side-effects (notify, write, webhook)",
+    "type": "object",
+    "required": ["id", "type", "title", "spec"],
+    "properties": {
+      "id": { "type": "string" },
+      "type": { "const": "adapter" },
+      "title": { "type": "string" },
+      "spec": {
+        "type": "object",
+        "required": ["kind"],
+        "properties": {
+          "kind": { "type": "string", "enum": ["webhook", "log", "file", "email", "sms"] },
+          "url": { "type": "string", "format": "uri-template" },
+          "method": { "type": "string", "enum": ["GET", "POST", "PUT", "DELETE"] },
+          "headers": { "type": "object" },
+          "body": { "oneOf": [ { "type": "object" }, { "type": "string" } ] }
+        }
+      },
+      "status": { "enum": ["running", "stopped"] },
+      "outputs": { "type": "object" }
+    }
+  }
+}
+
