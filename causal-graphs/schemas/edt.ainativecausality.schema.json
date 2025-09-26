@@ -1,0 +1,303 @@
+{
+  "connector": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Connector Service",
+    "description": "Fetch truth from external sources (HTTP, WS, file, sensor)",
+    "type": "object",
+    "required": ["id", "type", "title", "spec"],
+    "properties": {
+      "id": { "type": "string" },
+      "type": { "const": "connector" },
+      "title": { "type": "string" },
+      "spec": {
+        "type": "object",
+        "required": ["url", "outputKey"],
+        "properties": {
+          "url": { "type": "string", "format": "uri-template" },
+          "method": { "type": "string", "enum": ["GET","POST","PUT","DELETE"], "default": "GET" },
+          "outputKey": { "type": "string" },
+          "rules": { "type": "object" },
+          "cache": { "type": "object" },
+          "schedule": { "type": "object" },
+          "headers": { "type": "object" },
+          "body": { "oneOf": [ { "type": "object" }, { "type": "string" } ] }
+        }
+      },
+      "status": { "enum": ["running", "stopped"] },
+      "lastRun": { "type": ["string","null"], "format": "date-time" },
+      "outputs": { "type": "object" },
+      "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+      "provenance": { "type": "array", "items": { "type": "string" } },
+      "intent": { "type": "string" },
+      "causal_links": {
+        "type": "array",
+        "items": { "type": "object", "properties": {
+          "cause": { "type": "string" },
+          "effect": { "type": "string" },
+          "lag": { "type": "string" }
+        }}
+      },
+      "hypothesis_ref": { "type": "string" }
+    }
+  },
+
+  "processor": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Processor Service",
+    "description": "Pure transforms and relational algebra operations (σ, π, ⨝, map/reduce)",
+    "type": "object",
+    "required": ["id", "type", "title", "spec"],
+    "properties": {
+      "id": { "type": "string" },
+      "type": { "const": "processor" },
+      "title": { "type": "string" },
+      "spec": { "type": "object" },
+      "status": { "enum": ["running", "stopped"] },
+      "lastRun": { "type": ["string","null"], "format": "date-time" },
+      "outputs": { "type": "object" },
+      "confidence": { "type": "number" },
+      "provenance": { "type": "array", "items": { "type": "string" } },
+      "intent": { "type": "string" },
+      "causal_links": { "type": "array", "items": { "type": "object" } },
+      "hypothesis_ref": { "type": "string" }
+    }
+  },
+
+  "monitor": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Monitor Service",
+    "description": "Boolean/watch conditions that trigger events",
+    "type": "object",
+    "required": ["id", "type", "title", "spec"],
+    "properties": {
+      "id": { "type": "string" },
+      "type": { "const": "monitor" },
+      "title": { "type": "string" },
+      "spec": { "type": "object" },
+      "status": { "enum": ["running", "stopped"] },
+      "lastRun": { "type": ["string","null"], "format": "date-time" },
+      "outputs": { "type": "object" },
+      "confidence": { "type": "number" },
+      "provenance": { "type": "array", "items": { "type": "string" } },
+      "intent": { "type": "string" },
+      "causal_links": { "type": "array", "items": { "type": "object" } },
+      "hypothesis_ref": { "type": "string" }
+    }
+  },
+
+  "adapter": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Adapter Service",
+    "description": "Idempotent side-effects (notify, write, webhook)",
+    "type": "object",
+    "required": ["id", "type", "title", "spec"],
+    "properties": {
+      "id": { "type": "string" },
+      "type": { "const": "adapter" },
+      "title": { "type": "string" },
+      "spec": { "type": "object" },
+      "status": { "enum": ["running", "stopped"] },
+      "lastRun": { "type": ["string","null"], "format": "date-time" },
+      "outputs": { "type": "object" },
+      "confidence": { "type": "number" },
+      "provenance": { "type": "array", "items": { "type": "string" } },
+      "intent": { "type": "string" },
+      "causal_links": { "type": "array", "items": { "type": "object" } },
+      "hypothesis_ref": { "type": "string" }
+    }
+  },
+
+  "aggregator": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Aggregator Service",
+    "description": "Fan-in/fan-out combiners with windowing",
+    "type": "object",
+    "required": ["id", "type", "title", "spec"],
+    "properties": {
+      "id": { "type": "string" },
+      "type": { "const": "aggregator" },
+      "title": { "type": "string" },
+      "spec": { "type": "object" },
+      "status": { "enum": ["running", "stopped"] },
+      "lastRun": { "type": ["string","null"], "format": "date-time" },
+      "outputs": { "type": "object" },
+      "confidence": { "type": "number" },
+      "provenance": { "type": "array", "items": { "type": "string" } },
+      "intent": { "type": "string" },
+      "causal_links": { "type": "array", "items": { "type": "object" } },
+      "hypothesis_ref": { "type": "string" }
+    }
+  },
+
+  "router": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Router Service",
+    "description": "Content-based and rule-based routing",
+    "type": "object",
+    "required": ["id", "type", "title", "spec"],
+    "properties": {
+      "id": { "type": "string" },
+      "type": { "const": "router" },
+      "title": { "type": "string" },
+      "spec": { "type": "object" },
+      "status": { "enum": ["running", "stopped"] },
+      "lastRun": { "type": ["string","null"], "format": "date-time" },
+      "outputs": { "type": "object" },
+      "confidence": { "type": "number" },
+      "provenance": { "type": "array", "items": { "type": "string" } },
+      "intent": { "type": "string" },
+      "causal_links": { "type": "array", "items": { "type": "object" } },
+      "hypothesis_ref": { "type": "string" }
+    }
+  },
+
+  "scheduler": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Scheduler Service",
+    "description": "Cron/interval/backoff triggers",
+    "type": "object",
+    "required": ["id", "type", "title", "spec"],
+    "properties": {
+      "id": { "type": "string" },
+      "type": { "const": "scheduler" },
+      "title": { "type": "string" },
+      "spec": { "type": "object" },
+      "status": { "enum": ["running", "stopped"] },
+      "lastRun": { "type": ["string","null"], "format": "date-time" },
+      "outputs": { "type": "object" },
+      "confidence": { "type": "number" },
+      "provenance": { "type": "array", "items": { "type": "string" } },
+      "intent": { "type": "string" },
+      "causal_links": { "type": "array", "items": { "type": "object" } },
+      "hypothesis_ref": { "type": "string" }
+    }
+  },
+
+  "cache": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Cache Service",
+    "description": "Keyed memoization",
+    "type": "object",
+    "required": ["id", "type", "title", "spec"],
+    "properties": {
+      "id": { "type": "string" },
+      "type": { "const": "cache" },
+      "title": { "type": "string" },
+      "spec": { "type": "object" },
+      "status": { "enum": ["running", "stopped"] },
+      "lastRun": { "type": ["string","null"], "format": "date-time" },
+      "outputs": { "type": "object" },
+      "confidence": { "type": "number" },
+      "provenance": { "type": "array", "items": { "type": "string" } },
+      "intent": { "type": "string" },
+      "causal_links": { "type": "array", "items": { "type": "object" } },
+      "hypothesis_ref": { "type": "string" }
+    }
+  },
+
+  "vault": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Vault Service",
+    "description": "Secret/material management",
+    "type": "object",
+    "required": ["id", "type", "title", "spec"],
+    "properties": {
+      "id": { "type": "string" },
+      "type": { "const": "vault" },
+      "title": { "type": "string" },
+      "spec": { "type": "object" },
+      "status": { "enum": ["running", "stopped"] },
+      "lastRun": { "type": ["string","null"], "format": "date-time" },
+      "outputs": { "type": "object" },
+      "confidence": { "type": "number" },
+      "provenance": { "type": "array", "items": { "type": "string" } },
+      "intent": { "type": "string" },
+      "causal_links": { "type": "array", "items": { "type": "object" } },
+      "hypothesis_ref": { "type": "string" }
+    }
+  },
+
+  "ledger": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Ledger Service",
+    "description": "Append-only provenance log",
+    "type": "object",
+    "required": ["id", "type", "title", "spec"],
+    "properties": {
+      "id": { "type": "string" },
+      "type": { "const": "ledger" },
+      "title": { "type": "string" },
+      "spec": { "type": "object" },
+      "status": { "enum": ["running", "stopped"] },
+      "lastRun": { "type": ["string","null"], "format": "date-time" },
+      "outputs": { "type": "object" },
+      "confidence": { "type": "number" },
+      "provenance": { "type": "array", "items": { "type": "string" } },
+      "intent": { "type": "string" },
+      "causal_links": { "type": "array", "items": { "type": "object" } },
+      "hypothesis_ref": { "type": "string" }
+    }
+  },
+
+  "registry": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Registry Service",
+    "description": "Schema and version constraints",
+    "type": "object",
+    "required": ["id", "type", "title", "spec"],
+    "properties": {
+      "id": { "type": "string" },
+      "type": { "const": "registry" },
+      "title": { "type": "string" },
+      "spec": { "type": "object" },
+      "status": { "enum": ["running", "stopped"] },
+      "lastRun": { "type": ["string","null"], "format": "date-time" },
+      "outputs": { "type": "object" },
+      "confidence": { "type": "number" },
+      "provenance": { "type": "array", "items": { "type": "string" } },
+      "intent": { "type": "string" },
+      "causal_links": { "type": "array", "items": { "type": "object" } },
+      "hypothesis_ref": { "type": "string" }
+    }
+  },
+
+  "quota": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Quota Service",
+    "description": "Per-tenant rate/volume governors",
+    "type": "object",
+    "required": ["id", "type", "title", "spec"],
+    "properties": {
+      "id": { "type": "string" },
+      "type": { "const": "quota" },
+      "title": { "type": "string" },
+      "spec": { "type": "object" },
+      "status": { "enum": ["running", "stopped"] },
+      "lastRun": { "type": ["string","null"], "format": "date-time" },
+      "outputs": { "type": "object" },
+      "confidence": { "type": "number" },
+      "provenance": { "type": "array", "items": { "type": "string" } },
+      "intent": { "type": "string" },
+      "causal_links": { "type": "array", "items": { "type": "object" } },
+      "hypothesis_ref": { "type": "string" }
+    }
+  },
+
+  "hypothesis": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Hypothesis Service",
+    "description": "Causal claim with evidence and evolving confidence",
+    "type": "object",
+    "required": ["id", "claim"],
+    "properties": {
+      "id": { "type": "string" },
+      "claim": { "type": "string" },
+      "evidence_for": { "type": "array", "items": { "type": "string" } },
+      "evidence_against": { "type": "array", "items": { "type": "string" } },
+      "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+      "causal_links": { "type": "array", "items": { "type": "object" } },
+      "provenance": { "type": "array", "items": { "type": "string" } }
+    }
+  }
+}
+
