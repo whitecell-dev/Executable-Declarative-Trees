@@ -818,23 +818,25 @@ const routerHandler = {
 const exampleSPC = {
   spc_version: "1.0",
   meta: {
-    name: "Multi-Asset Price Monitor",
+    name: "Demo Monitor",
     exported_at: new Date().toISOString()
   },
   services: {
-    "btc-price": {
-      id: "btc-price",
+    "test-feed": {
+      id: "test-feed",
       type: "connector",
-      title: "Bitcoin Price Feed",
+      title: "Dummy Data Feed",
       spec: {
-        url: "https://api.coincap.io/v2/assets/bitcoin",
-        outputKey: "btc_data",
+        url: "https://jsonplaceholder.typicode.com/todos/1",
+        outputKey: "demo_data",
         rules: {
           rules: [{
             name: "extract",
             if: "data",
             then: {
-              price_usd: "{{ parseFloat(data.data.priceUsd) }}",
+              user: "{{ data.userId }}",
+              title: "{{ data.title }}",
+              done: "{{ data.completed }}",
               timestamp: "{{ new Date().toISOString() }}"
             }
           }]
@@ -844,20 +846,19 @@ const exampleSPC = {
       lastRun: null
     },
 
-    "price-processor": {
-      id: "price-processor",
+    "data-processor": {
+      id: "data-processor",
       type: "processor",
-      title: "Price Calculator",
+      title: "Demo Processor",
       spec: {
-        inputKey: "btc_data",
-        outputKey: "price_analysis",
+        inputKey: "demo_data",
+        outputKey: "processed_data",
         transform: [{
-          name: "calculate",
-          if: "data && data.price_usd",
+          name: "calc",
+          if: "data",
           then: {
-            price: "{{ data.price_usd }}",
-            change_from_60k: "{{ ((data.price_usd - 60000) / 60000 * 100).toFixed(2) }}",
-            status: "{{ data.price_usd > 65000 ? 'high' : data.price_usd < 55000 ? 'low' : 'normal' }}"
+            message: "{{ data.done ? '✅ Completed' : '⏳ Not yet' }}",
+            summary: "{{ data.user + ' - ' + data.title }}"
           }
         }]
       },
@@ -865,34 +866,20 @@ const exampleSPC = {
       lastRun: null
     },
 
-    "price-monitor": {
-      id: "price-monitor",
+    "data-monitor": {
+      id: "data-monitor",
       type: "monitor",
-      title: "Price Alert Monitor",
+      title: "Completion Monitor",
       spec: {
         checks: [{
-          name: "price",
-          dataKey: "price_analysis",
-          expression: "data && data.price"
+          name: "doneCheck",
+          dataKey: "processed_data",
+          expression: "data && data.message.includes('✅')"
         }],
         thresholds: {
-          price: { above: 70000, below: 50000 }
+          doneCheck: { above: 0 } // fake threshold just to exercise monitor
         },
         emit: "onChange"
-      },
-      status: "running",
-      lastRun: null
-    },
-
-    "price-aggregator": {
-      id: "price-aggregator",
-      type: "aggregator",
-      title: "5-Minute Window",
-      spec: {
-        inputKey: "price_analysis",
-        outputKey: "price_window",
-        window: { type: "tumbling", size_sec: 300 },
-        reduce: { emit: "all" }
       },
       status: "running",
       lastRun: null
@@ -900,6 +887,7 @@ const exampleSPC = {
   },
   state: {}
 };
+
 
 // UI Helper Functions
 function loadExample() {
