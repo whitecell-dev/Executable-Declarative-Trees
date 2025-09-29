@@ -312,14 +312,24 @@ function evalExpression(expr, context) {
 
 function templateObject(obj, context) {
     if (typeof obj === 'string') {
+        // Handle expressions inside {{ ... }}
+        const match = obj.match(/^\{\{(.+?)\}\}$/);
+        if (match) {
+            // Expression is the *whole* string → return raw evaluated value
+            return evalExpression(match[1].trim(), context);
+        }
+
+        // Expression is part of a larger string → interpolate as usual
         return obj.replace(/\{\{(.+?)\}\}/g, (_, expr) => {
             const result = evalExpression(expr.trim(), context);
-            return result !== null ? result : '';
+            return result !== null && result !== undefined ? result : '';
         });
     }
+
     if (Array.isArray(obj)) {
         return obj.map(item => templateObject(item, context));
     }
+
     if (typeof obj === 'object' && obj !== null) {
         const result = {};
         for (const [key, value] of Object.entries(obj)) {
@@ -327,6 +337,7 @@ function templateObject(obj, context) {
         }
         return result;
     }
+
     return obj;
 }
 
@@ -686,52 +697,54 @@ const monitorHandler = {
     }
 };
 
-// Adapter Handler (Webhook example)
+// ============================================================================
+// Adapter Handler (patched to support inputKey + proper context)
+// ============================================================================
 const adapterHandler = {
-    type: 'adapter',
-    async run(id, spec, ctx) {
-        if (spec.kind !== 'webhook') return {};
-        
-        // Generate idempotency key
-        const idempKey = spec.idempotency_key 
-            ? templateObject(spec.idempotency_key, { state: ctx.state })
-            : ctx.hash(id, ctx.clock());
-        
-        const dedupKey = `__sent_${ctx.hash(id, idempKey)}`;
-        
-        // Check if already sent
-        if (ctx.state[dedupKey]) {
-            ctx.log('info', `Adapter ${id}: Skipped (idempotent)`);
-            return {};
-        }
-        
-        // Prepare request body
-        const body = spec.body ? templateObject(spec.body, ctx) : {};
-        
-        try {
-            // In production, actually send the webhook
-            // Here we just simulate it
-            ctx.log('info', `Adapter ${id}: Would send webhook to ${spec.url}`);
-            
-            return {
-                patch: {
-                    [dedupKey]: ctx.clock(),
-                    [`${id}_last_sent`]: { 
-                        timestamp: ctx.clock(), 
-                        body,
-                        idempotency_key: idempKey
-                    }
-                },
-                events: [{ name: 'adapter.sent', for: id, data: { url: spec.url } }]
-            };
-        } catch (error) {
-            const msg = error?.message || String(error);
-            return {
-                patch: { [`${id}_error`]: msg }
-            };
-        }
+  type: 'adapter',
+  async run(id, spec, ctx) {
+    if (spec.kind !== 'webhook') return {};
+
+    // Pull input data if provided
+    const input = spec.inputKey ? ctx.state[spec.inputKey] : {};
+    const context = { data: input, state: ctx.state };
+
+    // Build idempotency key with template support
+    const idempKey = spec.idempotency_key
+       ? templateObject(spec.idempotency_key, { state: ctx.state, data: ctx.state.demo_data })
+      : ctx.hash(id, ctx.clock());
+
+    const dedupKey = `__sent_${ctx.hash(id, idempKey)}`;
+
+    // Deduplicate webhook sends
+    if (ctx.state[dedupKey]) {
+      ctx.log('info', `Adapter ${id}: Skipped (idempotent)`);
+      return {};
     }
+
+    // Prepare body with templateObject in the same context
+    const body = spec.body ? templateObject(spec.body, { state: ctx.state, data: ctx.state.demo_data }) : {};
+
+    try {
+      ctx.log('info', `Adapter ${id}: Would send webhook to ${spec.url}`);
+      return {
+        patch: {
+          [dedupKey]: ctx.clock(),
+          [`${id}_last_sent`]: {
+            timestamp: ctx.clock(),
+            body,
+            idempotency_key: idempKey
+          }
+        },
+        events: [{ name: 'adapter.sent', for: id, data: { url: spec.url } }]
+      };
+    } catch (error) {
+      const msg = error?.message || String(error);
+      return { patch: { [`${id}_error`]: msg } };
+    }
+  }
 };
+
 
 // Aggregator Handler
 const aggregatorHandler = {
