@@ -586,30 +586,30 @@ const connectorHandler = {
     }
 };
 
-// Processor Handler
+// Processor Handler (patched: persists stateful keys like _lastDone or spec.persist list)
 const processorHandler = {
     type: 'processor',
     run(id, spec, ctx) {
         const { inputKey, outputKey = `${id}_output`, transform, pipes } = spec;
         const input = ctx.state[inputKey];
-        
+
         if (!input) {
             return { patch: { [outputKey]: null } };
         }
-        
+
         let result = input;
-        
+
         // Apply transformation rules
         if (transform) {
             result = applyRules(input, transform, ctx);
         }
-        
+
         // Apply relational algebra pipes
         if (pipes) {
             for (const pipe of pipes) {
                 if (pipe.select) {
                     // σ - selection (filter)
-                    result = Array.isArray(result) 
+                    result = Array.isArray(result)
                         ? result.filter(row => evalExpression(pipe.select, { row, state: ctx.state }))
                         : result;
                 }
@@ -643,11 +643,36 @@ const processorHandler = {
                 }
             }
         }
-        
-        return {
-            patch: { [outputKey]: result },
-            events: [{ name: 'processor.computed', for: id }]
-        };
+
+        // Build patch for outputKey
+        const patch = { [outputKey]: result };
+
+        // --- Persisting logic ---
+        // Persist keys that:
+        //  - start with '_' (eg. _lastDone), OR
+        //  - are included explicitly via spec.persist = ["foo","bar"]
+        const persisted = [];
+        try {
+            if (result && typeof result === 'object') {
+                const persistList = Array.isArray(spec.persist) ? spec.persist : [];
+                for (const k of Object.keys(result)) {
+                    const shouldPersist = k.startsWith('_') || persistList.includes(k);
+                    if (shouldPersist) {
+                        ctx.state[k] = result[k];
+                        persisted.push(k);
+                    }
+                }
+            }
+        } catch (err) {
+            ctx.log('error', `Processor ${id} persist failed: ${err?.message || err}`);
+        }
+
+        const events = [{ name: 'processor.computed', for: id }];
+        if (persisted.length) {
+            events.push({ name: 'processor.persisted', for: id, data: { persisted } });
+        }
+
+        return { patch, events };
     }
 };
 
@@ -795,27 +820,45 @@ const aggregatorHandler = {
     }
 };
 
-// Additional Handlers
+// Router Handler (patched to read persisted state first)
 const routerHandler = {
     type: 'router',
     run(id, spec, ctx) {
         const { shard_key, shards = 1, routes = [], fallback } = spec;
-        
+
         let target = fallback;
-        
+
+        // Compute target route
         if (shard_key && shards > 1) {
             const key = evalExpression(shard_key, { state: ctx.state });
             const shard = Math.abs(ctx.hash(key).charCodeAt(0)) % shards;
             target = `${spec.route}_shard_${shard}`;
         } else if (routes.length > 0) {
             for (const route of routes) {
-                if (evalExpression(route.condition, { state: ctx.state })) {
+                // NEW: router checks persisted/global state first
+                const conditionTrue = evalExpression(route.condition, {
+                    state: ctx.state,
+                    data: ctx.state   // allow direct keys like _lastDone
+                });
+                if (conditionTrue) {
                     target = route.target;
                     break;
                 }
             }
         }
-        
+
+        // Disable all sibling processors
+        for (const [sid, service] of Object.entries(ctx.services)) {
+            if (service.id !== id && service.type.endsWith("processor")) {
+                service.status = 'stopped';
+            }
+        }
+
+        // Enable only the chosen route
+        if (target && ctx.services[target]) {
+            ctx.services[target].status = 'running';
+        }
+
         return {
             patch: { [`${id}_route`]: target },
             events: [{ name: 'router.dispatched', for: id, data: { target } }]
