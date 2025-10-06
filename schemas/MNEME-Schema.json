@@ -1,0 +1,35 @@
+mneme_record:
+  version: 1.0
+  engine: "AXIS/KERN"
+  tick: 14
+  run_id: "2025-10-04T20:41:33Z-uuid"
+  context:
+    app: "mortgage_engine"
+    kernel_mode: "iterative"
+    primitives: ["safeEval", "setNestedPath", "resolveValue"]
+  rule:
+    name: "calculate_monthly_payment"
+    priority: 7
+    iteration: 2
+    dependencies: ["loan.interest_rate"]
+    outcome: "executed"  # or "skipped", "blocked", "errored"
+  primitive:
+    name: "STATE_MUTATOR"
+    inputs: 
+      path: "loan.monthly_payment"
+      before: 0
+      after: 3278.54
+      type: "number"
+    duration_ms: 0.84
+  invariants:
+    violated: []
+    verified: ["numerical_sanity", "cash_flow_coherence"]
+  hash:
+    previous: "sha3-256:af32…"
+    current: "sha3-256:b91c…"
+    diff: "sha3-256:ef01…"
+  metadata:
+    user: "system"
+    source_file: "mortgage_rules_v1"
+    timestamp: "2025-10-04T20:41:33.681Z"
+
